@@ -33,7 +33,6 @@ public class PDFGenerator {
 		tidy.setShowWarnings(false);
 		tidy.parse(htmlInputStream, htmlOutputStream);
 		
-//		String url = htmlOutputFile.toURI().toURL().toString();
 
 		// set pdf file
 		String outputFile = "output.pdf";
@@ -43,10 +42,11 @@ public class PDFGenerator {
 		}
 		
 		OutputStream os = new FileOutputStream(outputFile);
+		String url = htmlOutputFile.toURI().toURL().toString();
 
 		// render pdf from tidy html
 		ITextRenderer renderer = new ITextRenderer();
-		renderer.setDocument(htmlOutputFile);
+		renderer.setDocument(url);
 		renderer.layout();
 		renderer.createPDF(os);
 
@@ -55,6 +55,6 @@ public class PDFGenerator {
 		// delete tidy html file
 		htmlInputStream.close();
 		htmlOutputStream.close();
-//		htmlOutputFile.delete();
+		htmlOutputFile.delete();
 	}
 }

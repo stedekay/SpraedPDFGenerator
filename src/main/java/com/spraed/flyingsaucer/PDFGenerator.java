@@ -8,6 +8,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.w3c.tidy.Tidy;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
@@ -16,10 +21,23 @@ import com.lowagie.text.DocumentException;
 public class PDFGenerator {
 
 	public static void main(String[] args) throws IOException,
-			DocumentException {
+			DocumentException, ParseException {
+		
+		// get options
+		Options options = new Options();
+		options.addOption("html", true, "HTML path");
+		options.addOption("pdf", true, "PDF path");
+		options.addOption("encoding", true, "Encoding");
+		
+		CommandLineParser parser = new PosixParser();
+		CommandLine cmd = parser.parse(options, args);
+
+		String htmlFile = cmd.getOptionValue("html");
+		String pdfFile = cmd.getOptionValue("pdf");
+		String encoding = cmd.getOptionValue("encoding");
 		
 		// get file input stream
-		String htmlInputFile = args[0];
+		String htmlInputFile = htmlFile;
 		InputStream htmlInputStream = new FileInputStream(htmlInputFile);
 		
 		// get file output stream for a tidy html
@@ -32,17 +50,12 @@ public class PDFGenerator {
 		tidy.setHideComments(true);
 		tidy.setShowWarnings(false);
 		tidy.setQuiet(true);
+		tidy.setInputEncoding(encoding);
+		tidy.setOutputEncoding(encoding);
 		tidy.parse(htmlInputStream, htmlOutputStream);
-		
 
-		// set pdf file
-		String outputFile = "output.pdf";
-		
-		if(args.length > 1) {
-			outputFile = args[1];
-		}
-		
-		OutputStream os = new FileOutputStream(outputFile);
+		// get output stream
+		OutputStream os = new FileOutputStream(pdfFile);
 		String url = htmlOutputFile.toURI().toURL().toString();
 
 		// render pdf from tidy html

@@ -31,6 +31,7 @@ public class PDFGenerator {
 		tidy.setXHTML(true);
 		tidy.setHideComments(true);
 		tidy.setShowWarnings(false);
+		tidy.setQuiet(true);
 		tidy.parse(htmlInputStream, htmlOutputStream);
 		
 

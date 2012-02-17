@@ -41,7 +41,7 @@ public class PDFGenerator {
 		InputStream htmlInputStream = new FileInputStream(htmlInputFile);
 		
 		// get file output stream for a tidy html
-		File htmlOutputFile = new File(System.getProperty("java.io.tmpdir") + "tidy" + UUID.randomUUID() + ".html");
+		File htmlOutputFile = File.createTempFile("tidy" + UUID.randomUUID(), ".html");
 		OutputStream htmlOutputStream = new FileOutputStream(htmlOutputFile);
 		
 		// clean up html

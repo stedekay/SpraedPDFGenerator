@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -41,7 +40,7 @@ public class PDFGenerator {
 		InputStream htmlInputStream = new FileInputStream(htmlInputFile);
 		
 		// get file output stream for a tidy html
-		File htmlOutputFile = File.createTempFile("tidy" + UUID.randomUUID(), ".html");
+		File htmlOutputFile = File.createTempFile("tidy", ".html");
 		OutputStream htmlOutputStream = new FileOutputStream(htmlOutputFile);
 		
 		// clean up html
@@ -56,11 +55,10 @@ public class PDFGenerator {
 
 		// get output stream
 		OutputStream os = new FileOutputStream(pdfFile);
-		String url = htmlOutputFile.toURI().toURL().toString();
 
 		// render pdf from tidy html
 		ITextRenderer renderer = new ITextRenderer();
-		renderer.setDocument(url);
+		renderer.setDocument(htmlOutputFile);
 		renderer.layout();
 		renderer.createPDF(os);
 

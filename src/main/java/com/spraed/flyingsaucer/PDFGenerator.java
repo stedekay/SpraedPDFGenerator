@@ -21,7 +21,10 @@ import org.w3c.tidy.Tidy;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 //import org.xhtmlrenderer.util.XRLog;
 
+import org.xhtmlrenderer.pdf.ITextFontResolver;
+
 import com.lowagie.text.DocumentException;
+import org.w3c.dom.DOMException;
 
 public class PDFGenerator {
 
@@ -37,6 +40,7 @@ public class PDFGenerator {
 		options.addOption("html", true, "HTML path");
 		options.addOption("pdf", true, "PDF path");
 		options.addOption("encoding", true, "Encoding");
+		options.addOption("fontPaths", true, "CSV font paths");
 
 		CommandLineParser parser = new PosixParser();
 		CommandLine cmd = parser.parse(options, args);
@@ -44,6 +48,7 @@ public class PDFGenerator {
 		String tmpFile = cmd.getOptionValue("html");
 		String pdfFile = cmd.getOptionValue("pdf");
 		String encoding = cmd.getOptionValue("encoding");
+		String fontPaths = cmd.getOptionValue("fontPaths");
 
 		// read html file directories from tmp file
 		InputStream tmpInputStream = new FileInputStream(tmpFile);
@@ -65,6 +70,10 @@ public class PDFGenerator {
 		
 		// create pdf renderer
 		ITextRenderer renderer = new ITextRenderer();
+                
+		if (fontPaths != null) {
+			configureFonts(renderer, fontPaths.split(","));
+		}
 
 		int index = 0;
 		for (String htmlInputFile : htmlFiles) {
@@ -108,5 +117,15 @@ public class PDFGenerator {
 		renderer.finishPDF();
 		os.close();
 
+	}
+        
+	protected static void configureFonts(ITextRenderer renderer, String[] fontPaths) throws DOMException,
+		DocumentException, IOException {
+            
+		ITextFontResolver resolver = renderer.getFontResolver();
+            
+		for (String fontPath : fontPaths) {
+			resolver.addFont(fontPath, true);
+		}
 	}
 }

@@ -105,20 +105,24 @@ public class PDFGenerator {
 			htmlInputStream.close();
 			htmlOutputStream.close();
 
-			// render pdf from tidy html
-			renderer.setDocument(htmlOutputFile);
-			renderer.layout();
+			try {
+				// render pdf from tidy html
+				renderer.setDocument(htmlOutputFile);
+				renderer.layout();
 
-			// check if pdf has to be created, iterate index afterwards
-			if (index == 0) {
-				renderer.createPDF(os, false);
-			} else {
-				renderer.writeNextDocument();
+				// check if pdf has to be created, iterate index afterwards
+				if (index == 0) {
+					renderer.createPDF(os, false);
+				} else {
+					renderer.writeNextDocument();
+				}
+				index++;
 			}
-			index++;
 
-			// delete html output file
-			htmlOutputFile.delete();
+			finally {
+				// delete html output file
+				htmlOutputFile.delete();
+			}
 		}
 
 		renderer.finishPDF();

@@ -1,7 +1,6 @@
 package com.spraed.flyingsaucer;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,10 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -102,10 +97,7 @@ public class PDFGenerator {
 	}
 
 	private static File tidyHtml(String htmlInputFile, String encoding) throws IOException {
-		String content = readFile(htmlInputFile, StandardCharsets.UTF_8);
-		content = content.replaceAll("[^\\x00-\\x7F]", "");
-		
-		InputStream htmlInputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+		InputStream htmlInputStream = new FileInputStream(htmlInputFile);
 		File htmlOutputFile = File.createTempFile("tidy", ".html");
 		OutputStream htmlOutputStream = new FileOutputStream(htmlOutputFile);
 
@@ -115,7 +107,6 @@ public class PDFGenerator {
 		tidy.setShowWarnings(false);
 		tidy.setQuiet(true);
 		tidy.setForceOutput(true);
-		tidy.setWord2000(true);
 
 		tidy.setInputEncoding(encoding);
 		tidy.setOutputEncoding(encoding);
@@ -125,10 +116,5 @@ public class PDFGenerator {
 		htmlOutputStream.close();
 
 		return htmlOutputFile;
-	}
-
-	private static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
 	}
 }

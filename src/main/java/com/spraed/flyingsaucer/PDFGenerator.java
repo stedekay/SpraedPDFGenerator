@@ -1,52 +1,70 @@
 package com.spraed.flyingsaucer;
 
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.w3c.tidy.Tidy;
+
+import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.openhtmltopdf.util.XRLog;
 
 public class PDFGenerator {
 
 	public static void main(String[] args) throws IOException, ParseException {
+		setLogLevel();
+		
 		CommandLine cmd = defineOptions(args);
-
-		String htmlContent = readHtmlFiles(cmd.getOptionValue("html"), cmd.getOptionValue("encoding"));
+		List<String> htmlFiles = getHtmlFiles(cmd.getOptionValue("html"));
 
 		OutputStream os = new FileOutputStream(cmd.getOptionValue("pdf"));
+		PDDocument doc = new PDDocument();
 
 		try {
-			PdfRendererBuilder rendererBuilder = new PdfRendererBuilder();
-			String fontPaths = cmd.getOptionValue("fontPaths");
-			if (fontPaths != null) {
-				configureFonts(rendererBuilder, fontPaths.split(","));
+			for (String htmlFile : htmlFiles) {
+				PdfRendererBuilder builder = new PdfRendererBuilder();
+				builder.withHtmlContent(readHtmlFile(htmlFile, cmd.getOptionValue("encoding")), null);
+				builder.usePDDocument(doc);
+				PdfBoxRenderer renderer = builder.buildPdfRenderer();
+				renderer.createPDFWithoutClosing();
+				renderer.close();
 			}
 
-			rendererBuilder.withHtmlContent(htmlContent, null);
-			rendererBuilder.toStream(os);
-			rendererBuilder.run();
+			doc.save(os);
 		} finally {
 			os.close();
+			doc.close();
 		}
 	}
-
-	private static void configureFonts(PdfRendererBuilder rendererBuilder, String[] fontPaths) {
-		for (String fontPath : fontPaths) {
-			rendererBuilder.useFont(new File(fontPath), "MyFont");
+	
+	private static void setLogLevel() {
+		Logger rootLogger = LogManager.getLogManager().getLogger("");
+		rootLogger.setLevel(Level.SEVERE);
+		for (Handler handler : rootLogger.getHandlers()) {
+			handler.setLevel(Level.SEVERE);
 		}
+
+		XRLog.listRegisteredLoggers().forEach(logger -> XRLog.setLevel(logger, Level.WARNING));
 	}
 
 	private static CommandLine defineOptions(String[] args) throws ParseException {
@@ -60,20 +78,27 @@ public class PDFGenerator {
 		return parser.parse(options, args);
 	}
 
-	private static String readHtmlFiles(String htmlListFilePath, String encoding) throws IOException {
-		BufferedReader reader = new BufferedReader(
-				new InputStreamReader(new FileInputStream(htmlListFilePath), encoding));
-		String line;
-		StringBuilder sb = new StringBuilder();
-		while ((line = reader.readLine()) != null) {
-			String htmlFilePath = line.trim();
-			String htmlContent = readHtmlFile(htmlFilePath, encoding);
-			sb.append(htmlContent);
+	private static List<String> getHtmlFiles(String htmlPathsFile) throws IOException {
+		InputStream tmpInputStream = new FileInputStream(htmlPathsFile);
+		InputStream dataStream = new DataInputStream(tmpInputStream);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(dataStream));
+
+		List<String> htmlFiles = new ArrayList<String>();
+		String strLine;
+		while ((strLine = reader.readLine()) != null) {
+			htmlFiles.add(strLine);
 		}
+
 		reader.close();
 
-		return tidyHtml(sb.toString(), encoding);
+		return htmlFiles;
 	}
+
+//	private static void configureFonts(PdfRendererBuilder rendererBuilder, String[] fontPaths) {
+//		for (String fontPath : fontPaths) {
+//			rendererBuilder.useFont(new File(fontPath), "MyFont");
+//		}
+//	}
 
 	private static String readHtmlFile(String htmlFilePath, String encoding) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(htmlFilePath), encoding));
@@ -88,8 +113,6 @@ public class PDFGenerator {
 	}
 
 	private static String tidyHtml(String htmlContent, String encoding) {
-		htmlContent = htmlContent.replaceAll("<!DOCTYPE[^>]*>", "");
-
 		Tidy tidy = new Tidy();
 		tidy.setXHTML(true);
 		tidy.setHideComments(true);

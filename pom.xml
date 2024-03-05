@@ -51,6 +51,4 @@
 			<version>${pdfbox.version}</version>
 		</dependency>
 	</dependencies>
-
-
 </project>

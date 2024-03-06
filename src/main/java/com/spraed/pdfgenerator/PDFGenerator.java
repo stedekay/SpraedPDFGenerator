@@ -1,4 +1,4 @@
-package com.spraed.flyingsaucer;
+package com.spraed.pdfgenerator;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -33,17 +33,18 @@ public class PDFGenerator {
 
 	public static void main(String[] args) throws IOException, ParseException {
 		setLogLevel();
-		
+
 		CommandLine cmd = defineOptions(args);
 		List<String> htmlFiles = getHtmlFiles(cmd.getOptionValue("html"));
 
+		String encoding = cmd.getOptionValue("encoding");
 		OutputStream os = new FileOutputStream(cmd.getOptionValue("pdf"));
 		PDDocument doc = new PDDocument();
 
 		try {
 			for (String htmlFile : htmlFiles) {
 				PdfRendererBuilder builder = new PdfRendererBuilder();
-				builder.withHtmlContent(readHtmlFile(htmlFile, cmd.getOptionValue("encoding")), null);
+				builder.withHtmlContent(readHtmlFile(htmlFile, encoding), null);
 				builder.usePDDocument(doc);
 				PdfBoxRenderer renderer = builder.buildPdfRenderer();
 				renderer.createPDFWithoutClosing();
@@ -56,7 +57,7 @@ public class PDFGenerator {
 			doc.close();
 		}
 	}
-	
+
 	private static void setLogLevel() {
 		Logger rootLogger = LogManager.getLogManager().getLogger("");
 		rootLogger.setLevel(Level.SEVERE);
@@ -72,7 +73,6 @@ public class PDFGenerator {
 		options.addOption("html", true, "HTML path");
 		options.addOption("pdf", true, "PDF path");
 		options.addOption("encoding", true, "Encoding");
-		options.addOption("fontPaths", true, "CSV font paths");
 
 		CommandLineParser parser = new PosixParser();
 		return parser.parse(options, args);
@@ -93,12 +93,6 @@ public class PDFGenerator {
 
 		return htmlFiles;
 	}
-
-//	private static void configureFonts(PdfRendererBuilder rendererBuilder, String[] fontPaths) {
-//		for (String fontPath : fontPaths) {
-//			rendererBuilder.useFont(new File(fontPath), "MyFont");
-//		}
-//	}
 
 	private static String readHtmlFile(String htmlFilePath, String encoding) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(htmlFilePath), encoding));
@@ -121,6 +115,7 @@ public class PDFGenerator {
 		tidy.setForceOutput(true);
 		tidy.setInputEncoding(encoding);
 		tidy.setOutputEncoding(encoding);
+		tidy.setDocType("omit");
 
 		StringWriter writer = new StringWriter();
 		tidy.parse(new StringReader(htmlContent), writer);
